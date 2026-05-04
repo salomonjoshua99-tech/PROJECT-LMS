@@ -1,0 +1,17 @@
+{
+    "name": "eduportal/project",
+    "description": "EduPortal backend",
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\Helpers\\": "src/helpers/",
+            "App\\Controllers\\": "src/controllers/",
+            "App\\Models\\": "src/models/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}
