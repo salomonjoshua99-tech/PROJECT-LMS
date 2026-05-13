@@ -21,6 +21,7 @@ $user = $_SESSION['user'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,9 +31,10 @@ $user = $_SESSION['user'];
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/homePage.css">
 </head>
+
 <body>
-    
-<div class="app-shell">
+
+    <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-block">
                 <p class="eyebrow">Campus Workspace</p>
@@ -231,7 +233,9 @@ $user = $_SESSION['user'];
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="5">Loading students...</td></tr>
+                            <tr>
+                                <td colspan="5">Loading students...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -326,7 +330,9 @@ $user = $_SESSION['user'];
                             </tr>
                         </thead>
                         <tbody id="studentListTable">
-                            <tr><td colspan="5">Loading students...</td></tr>
+                            <tr>
+                                <td colspan="5">Loading students...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -431,72 +437,73 @@ $user = $_SESSION['user'];
     </div>
 
     <script>
-    // Logout function
-    function logout() {
-        if (confirm('Are you sure you want to log out?')) {
-            fetch('api.php?action=logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: 'logout'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Logout response:', data);
-                if (data.success) {
-                    // Clear session and redirect
-                    alert(`Logout Success: ${data.message}`);
-                    window.location.href = 'pages/loginPage.php';
-                } else {
-                    alert('Logout failed: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Logout error:', error);
-                alert('Logout error. Please try again.');
-            });
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                fetch('api.php?action=logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'logout'
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Logout response:', data);
+                        if (data.success) {
+                            // Clear session and redirect
+                            alert(`Logout Success: ${data.message}`);
+                            window.location.href = 'pages/loginPage.php';
+                        } else {
+                            alert('Logout failed: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Logout error:', error);
+                        alert('Logout error. Please try again.');
+                    });
+            }
         }
-    }
 
-    // Set initial role based on user session
-    document.addEventListener('DOMContentLoaded', function() {
-        const body = document.body;
-        body.setAttribute('data-role', '<?php echo htmlspecialchars($user['role']); ?>');
-        body.setAttribute('data-user-id', '<?php echo (int) $user['id']; ?>');
-        const userRole = '<?php echo htmlspecialchars($user['role']); ?>';
-        const roleBtns = document.querySelectorAll('.role-btn');
-        const facultyOnly = document.querySelectorAll('.faculty-only');
-        const studentOnly = document.querySelectorAll('.student-only');
-        
-        // Set active role button
-        roleBtns.forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.role === userRole) {
-                btn.classList.add('active');
+        // Set initial role based on user session
+        document.addEventListener('DOMContentLoaded', function() {
+            const body = document.body;
+            body.setAttribute('data-role', '<?php echo htmlspecialchars($user['role']); ?>');
+            body.setAttribute('data-user-id', '<?php echo (int) $user['id']; ?>');
+            const userRole = '<?php echo htmlspecialchars($user['role']); ?>';
+            const roleBtns = document.querySelectorAll('.role-btn');
+            const facultyOnly = document.querySelectorAll('.faculty-only');
+            const studentOnly = document.querySelectorAll('.student-only');
+
+            // Set active role button
+            roleBtns.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.role === userRole) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Show/hide role-specific content
+            if (userRole === 'faculty') {
+                facultyOnly.forEach(el => el.classList.remove('hidden'));
+                studentOnly.forEach(el => el.classList.add('hidden'));
+                document.getElementById('heroEyebrow').textContent = 'Faculty Home';
+                document.getElementById('heroTitle').textContent = 'Manage classes, students, and deadlines from one clean workspace.';
+                document.getElementById('heroCopy').textContent = 'Create classes, share generated codes, and monitor activity at a glance.';
+                document.getElementById('classHeading').textContent = 'Subjects You Teach';
+            } else if (userRole === 'student') {
+                facultyOnly.forEach(el => el.classList.add('hidden'));
+                studentOnly.forEach(el => el.classList.remove('hidden'));
+                document.getElementById('heroEyebrow').textContent = 'Student Home';
+                document.getElementById('heroTitle').textContent = 'Track your progress and stay updated with your classes.';
+                document.getElementById('heroCopy').textContent = 'Join classes, view announcements, and manage your coursework.';
+                document.getElementById('classHeading').textContent = 'Your Classes';
             }
         });
-        
-        // Show/hide role-specific content
-        if (userRole === 'faculty') {
-            facultyOnly.forEach(el => el.classList.remove('hidden'));
-            studentOnly.forEach(el => el.classList.add('hidden'));
-            document.getElementById('heroEyebrow').textContent = 'Faculty Home';
-            document.getElementById('heroTitle').textContent = 'Manage classes, students, and deadlines from one clean workspace.';
-            document.getElementById('heroCopy').textContent = 'Create classes, share generated codes, and monitor activity at a glance.';
-            document.getElementById('classHeading').textContent = 'Subjects You Teach';
-        } else if (userRole === 'student') {
-            facultyOnly.forEach(el => el.classList.add('hidden'));
-            studentOnly.forEach(el => el.classList.remove('hidden'));
-            document.getElementById('heroEyebrow').textContent = 'Student Home';
-            document.getElementById('heroTitle').textContent = 'Track your progress and stay updated with your classes.';
-            document.getElementById('heroCopy').textContent = 'Join classes, view announcements, and manage your coursework.';
-            document.getElementById('classHeading').textContent = 'Your Classes';
-        }
-    });
-</script>
-<script src="assets/JavaScript/homePage.js"></script>
+    </script>
+    <script src="assets/JavaScript/homePage.js"></script>
 </body>
+
 </html>
