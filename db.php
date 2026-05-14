@@ -11,12 +11,14 @@ if (is_file(__DIR__ . '/.env')) {
     $env->load(__DIR__ . '/.env');
 }
 
-function dbConnection(){
+function dbConnection()
+{
     $database = Database::getInstance();
     return $database->getConnection();
 }
 
-function initializeSession(){
+function initializeSession()
+{
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }

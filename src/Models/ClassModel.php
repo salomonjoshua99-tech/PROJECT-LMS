@@ -8,8 +8,7 @@ use PDO;
 
 class ClassModel
 {
-    public function __construct(private PDO $pdo){
-    }
+    public function __construct(private PDO $pdo) {}
 
     private function ensureAnnouncementAttachmentsTable(): void
     {
@@ -109,7 +108,8 @@ class ClassModel
         );
     }
 
-    public function getFacultyClasses(int $facultyId): array{
+    public function getFacultyClasses(int $facultyId): array
+    {
         $stmt = $this->pdo->prepare(
             'SELECT c.id, c.faculty_id, c.course_code, c.title, c.section, c.class_code, c.status,
                     COUNT(e.student_id) as student_count
@@ -123,7 +123,8 @@ class ClassModel
         return $stmt->fetchAll();
     }
 
-    public function getStudentClasses(int $studentId): array{
+    public function getStudentClasses(int $studentId): array
+    {
         $stmt = $this->pdo->prepare(
             'SELECT c.id, c.faculty_id, c.course_code, c.title, c.section, c.class_code, c.status,
                     COUNT(DISTINCT e2.student_id) as student_count
@@ -141,7 +142,8 @@ class ClassModel
         return $classes;
     }
 
-    public function getStudentDeadlines(int $studentId): array{
+    public function getStudentDeadlines(int $studentId): array
+    {
         $stmt = $this->pdo->prepare(
             'SELECT d.id, d.title, d.description, d.type, d.due_date, d.class_id
              FROM deadlines d
@@ -154,7 +156,8 @@ class ClassModel
         return $stmt->fetchAll();
     }
 
-    public function getAnnouncements(int $userId, string $userRole): array{
+    public function getAnnouncements(int $userId, string $userRole): array
+    {
         $this->ensureAnnouncementAttachmentsTable();
 
         if ($userRole === 'faculty') {
@@ -189,7 +192,7 @@ class ClassModel
             return;
         }
 
-        $ids = array_map(static fn ($announcement) => (int) $announcement['id'], $announcements);
+        $ids = array_map(static fn($announcement) => (int) $announcement['id'], $announcements);
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->pdo->prepare(
             "SELECT id, announcement_id, filename, original_name, mime_type, file_size, file_path
@@ -210,7 +213,8 @@ class ClassModel
         }
     }
 
-    public function getCalendarDeadlines(int $studentId, int $year, int $month): array{
+    public function getCalendarDeadlines(int $studentId, int $year, int $month): array
+    {
         $stmt = $this->pdo->prepare(
             'SELECT DAY(d.due_date) as day, 
                     true as has_deadline, 
@@ -227,7 +231,7 @@ class ClassModel
             'year' => $year,
             'month' => $month
         ]);
-        
+
         $deadlines = [];
         foreach ($stmt->fetchAll() as $deadline) {
             $deadlines[] = [
@@ -282,7 +286,7 @@ class ClassModel
             return;
         }
 
-        $ids = array_map(static fn ($activity) => (int) $activity['id'], $activities);
+        $ids = array_map(static fn($activity) => (int) $activity['id'], $activities);
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->pdo->prepare(
             "SELECT id, activity_id, filename, original_name, mime_type, file_size, file_path
@@ -309,7 +313,7 @@ class ClassModel
             return;
         }
 
-        $ids = array_map(static fn ($activity) => (int) $activity['id'], $activities);
+        $ids = array_map(static fn($activity) => (int) $activity['id'], $activities);
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->pdo->prepare(
             "SELECT id, activity_id, student_id, grade_score, grade_max, submitted_at
@@ -326,7 +330,7 @@ class ClassModel
             return;
         }
 
-        $submissionIds = array_map(static fn ($submission) => (int) $submission['id'], $submissions);
+        $submissionIds = array_map(static fn($submission) => (int) $submission['id'], $submissions);
         $submissionPlaceholders = implode(',', array_fill(0, count($submissionIds), '?'));
         $attachmentStmt = $this->pdo->prepare(
             "SELECT id, submission_id, filename, original_name, mime_type, file_size, file_path
@@ -369,7 +373,7 @@ class ClassModel
             return;
         }
 
-        $activityIds = array_map(static fn ($activity) => (int) $activity['id'], $activities);
+        $activityIds = array_map(static fn($activity) => (int) $activity['id'], $activities);
         $activityPlaceholders = implode(',', array_fill(0, count($activityIds), '?'));
         $stmt = $this->pdo->prepare(
             "SELECT
@@ -444,14 +448,15 @@ class ClassModel
 
         foreach ($activities as &$activity) {
             $submissions = $submissionsByActivity[(int) $activity['id']] ?? [];
-            $submittedCount = count(array_filter($submissions, static fn ($submission) => $submission['submitted']));
+            $submittedCount = count(array_filter($submissions, static fn($submission) => $submission['submitted']));
             $activity['submissions'] = $submissions;
             $activity['submission_count'] = $submittedCount;
             $activity['student_count'] = count($submissions);
         }
     }
 
-    public function create(int $facultyId, string $courseCode, string $title, string $section, string $classCode): int{
+    public function create(int $facultyId, string $courseCode, string $title, string $section, string $classCode): int
+    {
         $stmt = $this->pdo->prepare(
             'INSERT INTO classes (faculty_id, course_code, title, section, class_code) 
              VALUES (:faculty_id, :course_code, :title, :section, :class_code)'
@@ -718,9 +723,9 @@ class ClassModel
              WHERE class_code = :class_code AND status = 'active' 
              LIMIT 1"
         );
-        
+
         $stmt->execute(['class_code' => $classCode]);
-        
+
         return $stmt->fetch() ?: null;
     }
 
@@ -730,12 +735,12 @@ class ClassModel
             "INSERT INTO enrollments (student_id, class_id, enrolled_at) 
              VALUES (:student_id, :class_id, NOW())"
         );
-        
+
         $stmt->execute([
             'student_id' => $userId,
             'class_id' => $classId
         ]);
-        
+
         return (int) $this->pdo->lastInsertId();
     }
 
@@ -767,7 +772,8 @@ class ClassModel
         return $stmt->fetchAll();
     }
 
-    public function getStudentClassmates(int $studentId): array {
+    public function getStudentClassmates(int $studentId): array
+    {
         $stmt = $this->pdo->prepare("
             SELECT DISTINCT u.id, u.name, u.email, c.course_code, c.title, c.section
             FROM users u

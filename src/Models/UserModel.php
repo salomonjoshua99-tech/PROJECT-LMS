@@ -6,12 +6,13 @@ namespace App\Models;
 
 use PDO;
 
-class UserModel{
+class UserModel
+{
 
-    public function __construct(private PDO $pdo){
-    }
+    public function __construct(private PDO $pdo) {}
 
-    public function findByEmail(string $email): ?array{
+    public function findByEmail(string $email): ?array
+    {
 
         $stmt = $this->pdo->prepare(
             'SELECT id, name, email, password_hash, role, birthdate, sex FROM users WHERE email = :email LIMIT 1'
@@ -22,7 +23,8 @@ class UserModel{
         return $row === false ? null : $row;
     }
 
-    public function create(string $name, string $email, string $passwordHash, string $role, ?string $birthdate = null, ?string $sex = null): int{
+    public function create(string $name, string $email, string $passwordHash, string $role, ?string $birthdate = null, ?string $sex = null): int
+    {
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO users (name, email, password_hash, role, birthdate, sex) VALUES (:name, :email, :password_hash, :role, :birthdate, :sex)'
@@ -39,7 +41,8 @@ class UserModel{
         return (int) $this->pdo->lastInsertId();
     }
 
-    public function recordLogin(int $userId, ?string $ipAddress, string $userAgent): void{
+    public function recordLogin(int $userId, ?string $ipAddress, string $userAgent): void
+    {
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO login_records (user_id, ip_address, user_agent, logged_in_at)
@@ -52,7 +55,8 @@ class UserModel{
         ]);
     }
 
-    public function updateProfile(int $userId, string $name, string $email, ?string $sex = null): bool {
+    public function updateProfile(int $userId, string $name, string $email, ?string $sex = null): bool
+    {
         $stmt = $this->pdo->prepare(
             'UPDATE users SET name = :name, email = :email, sex = :sex WHERE id = :id'
         );
@@ -64,7 +68,8 @@ class UserModel{
         ]);
     }
 
-    public function changePassword(int $userId, string $newPasswordHash): bool {
+    public function changePassword(int $userId, string $newPasswordHash): bool
+    {
         $stmt = $this->pdo->prepare(
             'UPDATE users SET password_hash = :password_hash WHERE id = :id'
         );

@@ -11,10 +11,10 @@ use PDO;
  */
 class CourseController
 {
-    public function __construct(private PDO $pdo){
-    }
+    public function __construct(private PDO $pdo) {}
 
-    public function list(): array{
+    public function list(): array
+    {
         return [
             'success' => true,
             'courses' => [],

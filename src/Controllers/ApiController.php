@@ -9,8 +9,7 @@ use App\Models\UserModel;
 
 class ApiController
 {
-    public function __construct(private ClassModel $classes, private UserModel $users) {
-    }
+    public function __construct(private ClassModel $classes, private UserModel $users) {}
 
     private const MAX_ATTACHMENT_SIZE = 10485760;
 
@@ -65,13 +64,13 @@ class ApiController
 
         $currentYear = (int) date('Y');
         $currentMonth = (int) date('n');
-        
+
         $deadlines = $this->classes->getCalendarDeadlines($userId, $currentYear, $currentMonth);
-        
+
         // Build calendar array with all days of current month
         $daysInMonth = (int) date('t');
         $calendar = [];
-        
+
         for ($day = 1; $day <= $daysInMonth; $day++) {
             $calendar[$day] = [
                 'day' => $day,
@@ -79,12 +78,12 @@ class ApiController
                 'title' => null
             ];
         }
-        
+
         // Mark days with deadlines
         foreach ($deadlines as $deadline) {
             $calendar[$deadline['day']] = $deadline;
         }
-        
+
         return array_values($calendar);
     }
 
@@ -95,7 +94,7 @@ class ApiController
         for ($i = 0; $i < 6; $i++) {
             $code .= $characters[rand(0, strlen($characters) - 1)];
         }
-        
+
         return ['success' => true, 'code' => $code];
     }
 
@@ -135,7 +134,7 @@ class ApiController
         try {
             // Use provided class code or generate new one
             $finalClassCode = $classCode ?: $this->generateClassCode();
-            
+
             $classId = $this->classes->create(
                 $user['id'],
                 trim($courseCode),
@@ -185,7 +184,7 @@ class ApiController
 
         try {
             $classInfo = $this->classes->getClassByCode(trim($classCode));
-            
+
             if (!$classInfo) {
                 return ['success' => false, 'message' => 'Invalid class code'];
             }
@@ -382,7 +381,7 @@ class ApiController
                 'attachments',
                 dirname(__DIR__) . '/Frontend/uploads/activity_attachments',
                 'uploads/activity_attachments',
-                fn (array $file, string $filename, string $publicPath) => $this->classes->addActivityAttachment(
+                fn(array $file, string $filename, string $publicPath) => $this->classes->addActivityAttachment(
                     $activityId,
                     $filename,
                     basename((string) $file['name']),
@@ -443,7 +442,7 @@ class ApiController
                 'attachments',
                 dirname(__DIR__) . '/Frontend/uploads/submission_attachments',
                 'uploads/submission_attachments',
-                fn (array $file, string $filename, string $publicPath) => $this->classes->addSubmissionAttachment(
+                fn(array $file, string $filename, string $publicPath) => $this->classes->addSubmissionAttachment(
                     $submissionId,
                     $filename,
                     basename((string) $file['name']),

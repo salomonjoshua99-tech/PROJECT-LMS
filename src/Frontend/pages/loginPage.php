@@ -25,7 +25,7 @@ $response = ['success' => false, 'message' => ''];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
     $email = Sanitizer::sanitizeEmail($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    
+
     $missing = Validator::required($_POST, ['email', 'password']);
     if ($missing !== []) {
         $response = ['success' => false, 'message' => 'Email and password are required.'];
@@ -33,12 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $response = ['success' => false, 'message' => 'Invalid email format.'];
     } else {
         $foundUser = $userModel->findByEmail($email);
-        
+
         if (!$foundUser || !password_verify($password, $foundUser['password_hash'])) {
             $response = ['success' => false, 'message' => 'Invalid email or password.'];
         } else {
             session_regenerate_id(true);
-            
+
             $sessionUser = [
                 'id' => (int) $foundUser['id'],
                 'name' => $foundUser['name'],
@@ -47,9 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 'birthdate' => $foundUser['birthdate'] ?? null,
                 'sex' => $foundUser['sex'] ?? null,
             ];
-            
+
             $_SESSION['user'] = $sessionUser;
-            
+
             try {
                 $userModel->recordLogin(
                     $sessionUser['id'],
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             } catch (\PDOException) {
                 // Login is still valid if only the audit insert fails
             }
-            
+
             $response = ['success' => true, 'message' => 'Login successful', 'redirect' => '../index.php'];
         }
     }
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Handle logout request
 elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'logout') {
     $_SESSION = [];
-    
+
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
         setcookie(
@@ -81,9 +81,9 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_PO
             (bool) $params['httponly']
         );
     }
-    
+
     session_destroy();
-    
+
     $response = ['success' => true, 'message' => 'Logged out successfully'];
 }
 
@@ -96,39 +96,32 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_PO
     $role = $_POST['role'] ?? '';
     $birthdate = $_POST['birthdate'] ?? '';
     $sex = $_POST['sex'] ?? '';
-    
+
     $missing = Validator::required($_POST, ['name', 'email', 'password', 'role', 'birthdate', 'sex']);
     if ($missing !== []) {
         $response = ['success' => false, 'message' => 'Name, email, password, role, birthdate, and sex are required.'];
-
-    }elseif ($name === '') {
+    } elseif ($name === '') {
         $response = ['success' => false, 'message' => 'Please enter your name.'];
-
-    }elseif (!Validator::validateEmail($email)) {
+    } elseif (!Validator::validateEmail($email)) {
         $response = ['success' => false, 'message' => 'Invalid email format.'];
-
-    }elseif (!Validator::inList($role, ['faculty', 'student'])) {
+    } elseif (!Validator::inList($role, ['faculty', 'student'])) {
         $response = ['success' => false, 'message' => 'Choose Faculty or Student.'];
-
-    }elseif (!Validator::inList($sex, ['male', 'female', 'other'])) {
+    } elseif (!Validator::inList($sex, ['male', 'female', 'other'])) {
         $response = ['success' => false, 'message' => 'Please select your sex.'];
-
-    }elseif (strlen($password) < 8) {
+    } elseif (strlen($password) < 8) {
         $response = ['success' => false, 'message' => 'Password must be at least 8 characters.'];
-
-    }elseif ($confirm !== $password) {
+    } elseif ($confirm !== $password) {
         $response = ['success' => false, 'message' => 'Passwords do not match.'];
-        
-    }elseif ($userModel->findByEmail($email) !== null) {
+    } elseif ($userModel->findByEmail($email) !== null) {
         $response = ['success' => false, 'message' => 'An account with that email already exists.'];
-    }else {
+    } else {
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        
+
         try {
             $id = $userModel->create($name, $email, $hash, $role, $birthdate, $sex);
-            
+
             session_regenerate_id(true);
-            
+
             $sessionUser = [
                 'id' => $id,
                 'name' => $name,
@@ -137,9 +130,9 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_PO
                 'birthdate' => $birthdate,
                 'sex' => $sex,
             ];
-            
+
             $_SESSION['user'] = $sessionUser;
-            
+
             try {
                 $userModel->recordLogin(
                     $sessionUser['id'],
@@ -149,7 +142,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_PO
             } catch (\PDOException) {
                 // Registration is still valid if only the audit insert fails
             }
-            
+
             $response = ['success' => true, 'message' => 'Registration successful', 'redirect' => '../index.php'];
         } catch (\PDOException $exception) {
             $sqlState = (string) $exception->getCode();
@@ -177,6 +170,7 @@ if ($response['success'] && isset($response['redirect'])) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -188,7 +182,7 @@ if ($response['success'] && isset($response['redirect'])) {
     <script>
         // Store PHP response for JavaScript use
         const serverResponse = <?php echo json_encode($response); ?>;
-        
+
         // Handle form submissions with AJAX
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
@@ -229,83 +223,84 @@ if ($response['success'] && isset($response['redirect'])) {
             // Handle login form submission
             loginForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
+
                 const formData = new FormData(loginForm);
                 loginError.classList.add('hidden');
-                
+
                 // Disable submit button
                 const submitBtn = loginForm.querySelector('.auth-submit');
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Logging in...';
 
                 fetch('', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Redirect to dashboard
-                        window.location.href = data.redirect;
-                    } else {
-                        loginError.textContent = data.message;
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Redirect to dashboard
+                            window.location.href = data.redirect;
+                        } else {
+                            loginError.textContent = data.message;
+                            loginError.classList.remove('hidden');
+                        }
+                    })
+                    .catch(error => {
+                        loginError.textContent = 'An error occurred. Please try again.';
                         loginError.classList.remove('hidden');
-                    }
-                })
-                .catch(error => {
-                    loginError.textContent = 'An error occurred. Please try again.';
-                    loginError.classList.remove('hidden');
-                })
-                .finally(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Login';
-                });
+                    })
+                    .finally(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Login';
+                    });
             });
 
             // Handle registration form submission
             registerForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
+
                 const formData = new FormData(registerForm);
                 registerError.classList.add('hidden');
-                
+
                 // Disable submit button
                 const submitBtn = registerForm.querySelector('.auth-submit');
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Creating account...';
 
                 fetch('', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Redirect to dashboard
-                        window.location.href = data.redirect;
-                    } else {
-                        registerError.textContent = data.message;
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Redirect to dashboard
+                            window.location.href = data.redirect;
+                        } else {
+                            registerError.textContent = data.message;
+                            registerError.classList.remove('hidden');
+                        }
+                    })
+                    .catch(error => {
+                        registerError.textContent = 'An error occurred. Please try again.';
                         registerError.classList.remove('hidden');
-                    }
-                })
-                .catch(error => {
-                    registerError.textContent = 'An error occurred. Please try again.';
-                    registerError.classList.remove('hidden');
-                })
-                .finally(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Create account';
-                });
+                    })
+                    .finally(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Create account';
+                    });
             });
         });
     </script>
 </head>
+
 <body>
 
     <div class="auth-overlay" id="authOverlay">
@@ -381,4 +376,5 @@ if ($response['success'] && isset($response['redirect'])) {
 
 
 </body>
+
 </html>

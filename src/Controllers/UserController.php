@@ -7,14 +7,15 @@ namespace App\Controllers;
 use App\Helpers\Sanitizer;
 use App\Helpers\Validator;
 use App\Models\UserModel;
+
 class UserController
 {
-    public function __construct(private UserModel $users){
-    }
+    public function __construct(private UserModel $users) {}
     /**
      * @return array{success: bool, user?: array<string, mixed>|null, message?: string}
      */
-    public function session(): array{
+    public function session(): array
+    {
         return [
             'success' => true,
             'user' => $this->currentUserFromSession(),
@@ -24,11 +25,13 @@ class UserController
     /**
      * @return array{success: bool, user?: array<string, mixed>, message?: string}
      */
-    public function login(): array{
+    public function login(): array
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return [
-                'success' => false, 
-                'message' => 'Invalid request method.'];
+                'success' => false,
+                'message' => 'Invalid request method.'
+            ];
         }
 
         $rawInput = file_get_contents('php://input');
@@ -36,8 +39,9 @@ class UserController
 
         if (!is_array($input)) {
             return [
-                'success' => false, 
-                'message' => 'Invalid request data.'];
+                'success' => false,
+                'message' => 'Invalid request data.'
+            ];
         }
 
         $email = Sanitizer::sanitizeEmail((string) ($input['email'] ?? ''));
@@ -46,22 +50,25 @@ class UserController
         $missing = Validator::required($input, ['email', 'password']);
         if ($missing !== []) {
             return [
-                'success' => false, 
-                'message' => 'Email and password are required.'];
+                'success' => false,
+                'message' => 'Email and password are required.'
+            ];
         }
 
         if (!Validator::validateEmail($email)) {
             return [
-                'success' => false, 
-                'message' => 'Invalid email format.'];
+                'success' => false,
+                'message' => 'Invalid email format.'
+            ];
         }
 
         $foundUser = $this->users->findByEmail($email);
 
         if (!$foundUser || !password_verify($password, $foundUser['password_hash'])) {
             return [
-                'success' => false, 
-                'message' => 'Invalid email or password.'];
+                'success' => false,
+                'message' => 'Invalid email or password.'
+            ];
         }
 
         session_regenerate_id(true);
@@ -91,11 +98,13 @@ class UserController
     /**
      * @return array{success: bool, user?: array<string, mixed>, message?: string}
      */
-    public function register(): array{
+    public function register(): array
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return [
-                'success' => false, 
-                'message' => 'Invalid request method.'];
+                'success' => false,
+                'message' => 'Invalid request method.'
+            ];
         }
 
         $rawInput = file_get_contents('php://input');
@@ -103,22 +112,25 @@ class UserController
 
         if (!is_array($input)) {
             return [
-                'success' => false, 
-                'message' => 'Invalid request payload.'];
+                'success' => false,
+                'message' => 'Invalid request payload.'
+            ];
         }
 
         $missing = Validator::required($input, ['name', 'email', 'password', 'role']);
         if ($missing !== []) {
             return [
-                'success' => false, 
-                'message' => 'Name, email, password, and role are required.'];
+                'success' => false,
+                'message' => 'Name, email, password, and role are required.'
+            ];
         }
 
         $name = Sanitizer::plainText(trim((string) ($input['name'] ?? '')), 120);
         if ($name === '') {
             return [
-                'success' => false, 
-                'message' => 'Please enter your name.'];
+                'success' => false,
+                'message' => 'Please enter your name.'
+            ];
         }
 
         $email = Sanitizer::sanitizeEmail((string) ($input['email'] ?? ''));
@@ -127,33 +139,38 @@ class UserController
 
         if (!Validator::validateEmail($email)) {
             return [
-                'success' => false, 
-                'message' => 'Invalid email format.'];
+                'success' => false,
+                'message' => 'Invalid email format.'
+            ];
         }
 
         if (!Validator::inList($role, ['faculty', 'student'])) {
             return [
-                'success' => false, 
-                'message' => 'Choose Faculty or Student.'];
+                'success' => false,
+                'message' => 'Choose Faculty or Student.'
+            ];
         }
 
         if (strlen($password) < 8) {
             return [
-                'success' => false, 
-                'message' => 'Password must be at least 8 characters.'];
+                'success' => false,
+                'message' => 'Password must be at least 8 characters.'
+            ];
         }
 
         $confirm = (string) ($input['password_confirm'] ?? $password);
         if ($confirm !== $password) {
             return [
-                'success' => false, 
-                'message' => 'Passwords do not match.'];
+                'success' => false,
+                'message' => 'Passwords do not match.'
+            ];
         }
 
         if ($this->users->findByEmail($email) !== null) {
             return [
-                'success' => false, 
-                'message' => 'An account with that email already exists.'];
+                'success' => false,
+                'message' => 'An account with that email already exists.'
+            ];
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -164,8 +181,9 @@ class UserController
             $sqlState = (string) $exception->getCode();
             if ($sqlState === '23000' || str_contains($exception->getMessage(), 'Duplicate')) {
                 return [
-                    'success' => false, 
-                    'message' => 'An account with that email already exists.'];
+                    'success' => false,
+                    'message' => 'An account with that email already exists.'
+                ];
             }
 
             throw $exception;
@@ -192,8 +210,9 @@ class UserController
         }
 
         return [
-            'success' => true, 
-            'user' => $sessionUser];
+            'success' => true,
+            'user' => $sessionUser
+        ];
     }
 
     /**
@@ -203,8 +222,9 @@ class UserController
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return [
-                'success' => false, 
-                'message' => 'Invalid request method.'];
+                'success' => false,
+                'message' => 'Invalid request method.'
+            ];
         }
 
         $_SESSION = [];

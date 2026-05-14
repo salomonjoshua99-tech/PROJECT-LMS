@@ -147,7 +147,7 @@ button {
     margin: 0;
 }
 
-.demo-box p + p {
+.demo-box p+p {
     margin-top: 8px;
 }
 
@@ -286,15 +286,15 @@ button {
     .auth-overlay {
         padding: 16px;
     }
-    
+
     .auth-card {
         padding: 24px 20px;
     }
-    
+
     .auth-card h2 {
         font-size: 1.75rem;
     }
-    
+
     .role-option {
         display: block;
         margin-right: 0;
