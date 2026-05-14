@@ -70,6 +70,7 @@ let allStudents = [];
 let subjectFilter = null;
 let selectedClassId = null;
 let expandedSubmissionActivityId = null;
+let expandedStudentGradeKey = null;
 const localClassActivities = {};
 
 const rotatingAnnouncements = [
@@ -329,6 +330,16 @@ function renderGradeSummaryText(summary) {
     }
 
     return `${summary.percent.toFixed(1)}% (${summary.graded} graded)`;
+}
+
+function getStudentGradeRows(classId, studentId) {
+    return getClassActivities(classId).map((activity) => {
+        const submission = (activity.submissions || []).find((item) => String(item.student_id) === String(studentId));
+        return {
+            activity,
+            submission
+        };
+    });
 }
 
 class ClassAttachmentManager {
@@ -751,6 +762,36 @@ function renderFacultySubmissionPanel(activity) {
     `;
 }
 
+function renderStudentListGradeEditor(classId, studentId) {
+    const gradeRows = getStudentGradeRows(classId, studentId);
+
+    if (gradeRows.length === 0) {
+        return '<div class="student-list-grade-editor"><p>No activities yet.</p></div>';
+    }
+
+    return `
+        <div class="student-list-grade-editor">
+            ${gradeRows.map(({ activity, submission }) => `
+                <div class="student-list-grade-row">
+                    <div>
+                        <strong>${escapeHTML(activity.title || 'Activity')}</strong>
+                        <small>${submission?.submitted ? `Submitted ${escapeHTML(submission.submittedAt || submission.submitted_at || '')}` : 'No submission yet'}</small>
+                    </div>
+                    ${submission?.submitted ? `
+                        <div class="grade-editor compact-grade-editor">
+                            <span>${escapeHTML(formatGrade(submission.grade))}</span>
+                            <input type="number" min="0" step="0.01" value="${submission.grade ? escapeHTML(submission.grade.score) : ''}" placeholder="Score" data-grade-score-for="${escapeHTML(submission.submission_id)}">
+                            <input type="number" min="1" step="0.01" value="${submission.grade ? escapeHTML(submission.grade.max) : '100'}" placeholder="Max" data-grade-max-for="${escapeHTML(submission.submission_id)}">
+                            <button class="primary-btn compact-btn save-grade-btn" type="button" data-submission-id="${escapeHTML(submission.submission_id)}">Save</button>
+                            <button class="ghost-btn compact-btn delete-grade-btn" type="button" data-submission-id="${escapeHTML(submission.submission_id)}">Delete</button>
+                        </div>
+                    ` : '<span class="missing-status">Grade available after submission</span>'}
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
 function renderClassActivities(classId, userRole = null) {
     if (!classworkList) {
         return;
@@ -815,20 +856,35 @@ function showStudentList(classId) {
     if (classStudents.length === 0) {
         studentListTable.innerHTML = '<tr><td colspan="5">No students enrolled yet.</td></tr>';
     } else {
-        studentListTable.innerHTML = classStudents.map((student) => `
-            <tr data-student-id="${student.id}" data-class-id="${student.class_id}">
-                <td>${escapeHTML(student.name)}</td>
-                <td>${student.id}</td>
-                <td>${escapeHTML(student.email || 'N/A')}</td>
-                <td>${escapeHTML(renderGradeSummaryText(getClassGradeSummary(student.class_id, student.id)))}</td>
-                <td>
-                    ${(authenticatedUser?.role || appData?.user?.role || 'student') === 'faculty' ?
-                `<button class="ghost-btn compact-btn remove-student-from-list-btn" data-student-id="${student.id}" data-class-id="${student.class_id}">Remove</button>` :
-                '<span class="no-actions">View only</span>'
-            }
-                </td>
-            </tr>
-        `).join("");
+        const role = authenticatedUser?.role || appData?.user?.role || 'student';
+        studentListTable.innerHTML = classStudents.map((student) => {
+            const gradeKey = `${student.class_id}:${student.id}`;
+            const isGradeEditorOpen = expandedStudentGradeKey === gradeKey;
+
+            return `
+                <tr data-student-id="${student.id}" data-class-id="${student.class_id}">
+                    <td>${escapeHTML(student.name)}</td>
+                    <td>${student.id}</td>
+                    <td>${escapeHTML(student.email || 'N/A')}</td>
+                    <td>${escapeHTML(renderGradeSummaryText(getClassGradeSummary(student.class_id, student.id)))}</td>
+                    <td>
+                        ${role === 'faculty' ? `
+                            <div class="student-list-actions">
+                                <button class="ghost-btn compact-btn edit-student-grade-btn" type="button" data-student-id="${student.id}" data-class-id="${student.class_id}">
+                                    ${isGradeEditorOpen ? 'Hide Grades' : 'Edit Grades'}
+                                </button>
+                                <button class="ghost-btn compact-btn remove-student-from-list-btn" type="button" data-student-id="${student.id}" data-class-id="${student.class_id}">Remove</button>
+                            </div>
+                        ` : '<span class="no-actions">View only</span>'}
+                    </td>
+                </tr>
+                ${isGradeEditorOpen ? `
+                    <tr class="student-grade-detail-row">
+                        <td colspan="5">${renderStudentListGradeEditor(student.class_id, student.id)}</td>
+                    </tr>
+                ` : ''}
+            `;
+        }).join("");
     }
 
     // Show student list panel
@@ -1399,6 +1455,14 @@ document.addEventListener('click', function (e) {
         showStudentList(classId);
     }
 
+    if (e.target.closest('.edit-student-grade-btn')) {
+        e.preventDefault();
+        const btn = e.target.closest('.edit-student-grade-btn');
+        const gradeKey = `${btn.dataset.classId}:${btn.dataset.studentId}`;
+        expandedStudentGradeKey = expandedStudentGradeKey === gradeKey ? null : gradeKey;
+        showStudentList(btn.dataset.classId);
+    }
+
     // Handle remove student from list button (in individual student list view)
     if (e.target.closest('.remove-student-from-list-btn')) {
         e.preventDefault();
@@ -1438,12 +1502,15 @@ async function removeStudentFromList(studentId, classId, studentElement) {
 
             // Show empty message if no students left
             if (newCount === 0) {
-                document.getElementById('studentListTable').innerHTML = '<tr><td colspan="4">No students enrolled yet.</td></tr>';
+                document.getElementById('studentListTable').innerHTML = '<tr><td colspan="5">No students enrolled yet.</td></tr>';
             }
 
             // Remove from app data
             if (appData.students) {
                 appData.students = appData.students.filter(s => !(String(s.id) === String(studentId) && String(s.class_id) === String(classId)));
+            }
+            if (expandedStudentGradeKey === `${classId}:${studentId}`) {
+                expandedStudentGradeKey = null;
             }
 
             // Update class student count
@@ -1556,7 +1623,7 @@ document.addEventListener('click', function (e) {
 
     if (e.target.classList.contains('save-grade-btn')) {
         e.preventDefault();
-        saveSubmissionGrade(e.target.dataset.submissionId);
+        saveSubmissionGrade(e.target.dataset.submissionId, e.target.closest('.grade-editor'));
     }
 
     if (e.target.classList.contains('delete-grade-btn')) {
@@ -1575,9 +1642,17 @@ function findSubmissionById(submissionId) {
     return null;
 }
 
-async function saveSubmissionGrade(submissionId) {
-    const scoreInput = document.querySelector(`[data-grade-score-for="${CSS.escape(String(submissionId))}"]`);
-    const maxInput = document.querySelector(`[data-grade-max-for="${CSS.escape(String(submissionId))}"]`);
+function refreshGradeViews() {
+    renderClassManager(selectedClassId);
+    if (document.getElementById('studentList')?.classList.contains('active') && selectedClassId) {
+        showStudentList(selectedClassId);
+    }
+}
+
+async function saveSubmissionGrade(submissionId, editor = document) {
+    const gradeEditor = editor || document;
+    const scoreInput = gradeEditor.querySelector(`[data-grade-score-for="${CSS.escape(String(submissionId))}"]`);
+    const maxInput = gradeEditor.querySelector(`[data-grade-max-for="${CSS.escape(String(submissionId))}"]`);
     const score = scoreInput?.value;
     const maxScore = maxInput?.value;
 
@@ -1605,7 +1680,7 @@ async function saveSubmissionGrade(submissionId) {
             submission.grade_score = result.grade.score;
             submission.grade_max = result.grade.max;
         }
-        renderClassManager(selectedClassId);
+        refreshGradeViews();
     } catch (error) {
         console.error("Save grade error:", error);
         window.alert("Error saving grade.");
@@ -1635,7 +1710,7 @@ async function deleteSubmissionGrade(submissionId) {
             submission.grade_score = null;
             submission.grade_max = null;
         }
-        renderClassManager(selectedClassId);
+        refreshGradeViews();
     } catch (error) {
         console.error("Delete grade error:", error);
         window.alert("Error deleting grade.");

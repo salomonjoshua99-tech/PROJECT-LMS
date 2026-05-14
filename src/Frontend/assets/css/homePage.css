@@ -968,6 +968,57 @@ input:focus {
     overflow-wrap: anywhere;
 }
 
+.compact-grade-editor {
+    grid-template-columns: minmax(80px, 1fr) minmax(80px, 1fr) auto auto;
+}
+
+.compact-grade-editor > span {
+    grid-column: 1 / -1;
+}
+
+.student-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.student-grade-detail-row td {
+    background: var(--bg);
+}
+
+.student-list-grade-editor {
+    display: grid;
+    gap: 10px;
+}
+
+.student-list-grade-editor p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.student-list-grade-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 0.75fr) minmax(260px, 1.25fr);
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-strong);
+}
+
+.student-list-grade-row strong {
+    display: block;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.student-list-grade-row small {
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
 .student-grade-line {
     grid-template-columns: minmax(0, 1fr) auto;
     padding: 8px 10px;
@@ -1384,6 +1435,15 @@ th {
 
     .classroom-header {
         align-items: start;
+    }
+
+    .compact-grade-editor,
+    .student-list-grade-row {
+        grid-template-columns: 1fr;
+    }
+
+    .student-list-actions {
+        flex-direction: column;
     }
 
     .hero-card h2 {
