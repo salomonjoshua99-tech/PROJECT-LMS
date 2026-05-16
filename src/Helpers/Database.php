@@ -11,12 +11,16 @@ use App\Helpers\EnvParser;
 class Database
 {
 
+    // Singleton instance storage.
     private static ?Database $instance = null;
+
+    // Underlying PDO database connection.
     private ?PDO $pdo = null;
 
+    // Configuration values loaded from environment.
     private $config;
 
-    // Private constructor (prevents direct instantiation)
+    // Private constructor prevents external instantiation.
     private function __construct()
     {
         $env = new EnvParser();
@@ -25,6 +29,7 @@ class Database
         $this->connect();
     }
 
+    // Load database connection settings from the environment.
     private function loadConfig()
     {
         $this->config = [
@@ -43,6 +48,7 @@ class Database
         }
     }
 
+    // Establish a PDO connection using the loaded configuration.
     private function connect()
     {
         try {
@@ -70,16 +76,16 @@ class Database
         }
     }
 
-    // Clone prevention
+    // Prevent cloning of the singleton instance.
     private function __clone() {}
 
-    // Wakeup prevention (for unserialization)
+    // Prevent unserialization of the singleton.
     public function __wakeup()
     {
         throw new RuntimeException("Cannot unserialize singleton");
     }
 
-    // Get the single instance
+    // Get or create the singleton database instance.
     public static function getInstance(): Database
     {
         if (self::$instance === null) {
@@ -88,11 +94,13 @@ class Database
         return self::$instance;
     }
 
+    // Return the raw PDO connection for direct usage.
     public function getConnection()
     {
         return $this->pdo;
     }
-    // Example helper methods
+
+    // Example convenience helpers around PDO.
     public function prepare(string $sql): PDOStatement
     {
         return $this->pdo->prepare($sql);
@@ -103,11 +111,13 @@ class Database
         return $this->pdo->query($sql);
     }
 
+    // Return the ID of the last inserted row.
     public function lastInsertId(): string
     {
         return $this->pdo->lastInsertId();
     }
 
+    // Transaction management helpers.
     public function beginTransaction(): bool
     {
         return $this->pdo->beginTransaction();

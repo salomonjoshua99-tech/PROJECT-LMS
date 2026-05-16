@@ -1,4 +1,5 @@
 <?php
+// Load Composer autoloader and application classes.
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Controllers\ApiController;
@@ -6,14 +7,17 @@ use App\Helpers\Database;
 use App\Models\ClassModel;
 use App\Models\UserModel;
 
+// Start or resume the session to track authenticated users.
 session_start();
 
-// Route the request based on action parameter
+// Determine the requested API action from GET or POST parameters.
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+// Always return JSON from this API endpoint.
 header('Content-Type: application/json');
 
-// Handle generateCode without database connection
+// Handle generateCode before any session or database checks.
+// This endpoint only needs to return a one-time random code.
 if ($action === 'generateCode') {
     error_log("generateCode action received");
     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -26,67 +30,82 @@ if ($action === 'generateCode') {
     exit;
 }
 
-// Check if user is logged in (except for logout action)
+// Block unauthenticated users for all actions except logout.
 if ($action !== 'logout' && (!isset($_SESSION['user']) || !is_array($_SESSION['user']))) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
+// Initialize database-backed models and API controller for authenticated actions.
 $database = Database::getInstance();
 $userModel = new UserModel($database->getConnection());
 $classModel = new ClassModel($database->getConnection());
 $apiController = new ApiController($classModel, $userModel);
 
+// Dispatch the API action through the controller methods.
 switch ($action) {
     case 'getUserData':
+        // Return all available user dashboard data.
         echo json_encode($apiController->getUserData());
         break;
 
     case 'createClass':
+        // Create a new class record for the logged-in faculty user.
         echo json_encode($apiController->createClass());
         break;
 
     case 'joinClass':
+        // Enroll the logged-in student in a class by code.
         echo json_encode($apiController->joinClass());
         break;
 
     case 'createAnnouncement':
+        // Create a class announcement with optional attachments.
         echo json_encode($apiController->createAnnouncement());
         break;
 
     case 'removeStudent':
+        // Remove a student from a class (alternate action alias).
         echo json_encode($apiController->removeStudent());
         break;
 
     case 'removeStudentFromClass':
+        // Map duplicate action name to the same remove student logic.
         echo json_encode($apiController->removeStudent());
         break;
 
     case 'deleteAnnouncement':
+        // Delete a class announcement.
         echo json_encode($apiController->deleteAnnouncement());
         break;
 
     case 'createActivity':
+        // Create a new activity for a class.
         echo json_encode($apiController->createActivity());
         break;
 
     case 'submitActivity':
+        // Submit an activity with attachments.
         echo json_encode($apiController->submitActivity());
         break;
 
     case 'deleteActivity':
+        // Delete an existing activity.
         echo json_encode($apiController->deleteActivity());
         break;
 
     case 'saveSubmissionGrade':
+        // Save a grade for a student submission.
         echo json_encode($apiController->saveSubmissionGrade());
         break;
 
     case 'deleteSubmissionGrade':
+        // Delete a previously saved submission grade.
         echo json_encode($apiController->deleteSubmissionGrade());
         break;
 
     case 'updateProfile':
+        // Handle profile updates for the current user.
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['success' => false, 'message' => 'Invalid request method']);
             break;
@@ -105,6 +124,7 @@ switch ($action) {
         $result = $userModel->updateProfile($user['id'], trim($name), trim($email), $sex ?: null);
 
         if ($result) {
+            // Update session state after successful profile save.
             $_SESSION['user']['name'] = trim($name);
             $_SESSION['user']['email'] = trim($email);
             $_SESSION['user']['sex'] = $sex ?: null;
@@ -115,6 +135,7 @@ switch ($action) {
         break;
 
     case 'changePassword':
+        // Handle password changes for the logged-in user.
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['success' => false, 'message' => 'Invalid request method']);
             break;
@@ -147,7 +168,7 @@ switch ($action) {
         break;
 
     case 'logout':
-        // Clear session data and destroy
+        // Clear session data and destroy the PHP session.
         $_SESSION = array();
         session_destroy();
 
@@ -155,6 +176,7 @@ switch ($action) {
         break;
 
     default:
+        // Handle unknown or unsupported actions.
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;
 }

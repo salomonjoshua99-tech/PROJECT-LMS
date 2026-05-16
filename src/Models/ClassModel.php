@@ -8,8 +8,10 @@ use PDO;
 
 class ClassModel
 {
+    // PDO instance used for all class-related database operations.
     public function __construct(private PDO $pdo) {}
 
+    // Ensure announcement attachments table exists before using it.
     private function ensureAnnouncementAttachmentsTable(): void
     {
         $this->pdo->exec(
@@ -30,6 +32,7 @@ class ClassModel
         );
     }
 
+    // Ensure all classwork-related tables exist, including activities, attachments, and submissions.
     private function ensureClassworkTables(): void
     {
         $this->pdo->exec(
@@ -123,6 +126,7 @@ class ClassModel
         return $stmt->fetchAll();
     }
 
+    // Get active classes where a student is enrolled.
     public function getStudentClasses(int $studentId): array
     {
         $stmt = $this->pdo->prepare(
@@ -142,6 +146,7 @@ class ClassModel
         return $classes;
     }
 
+    // Retrieve upcoming deadlines for a student across enrolled classes.
     public function getStudentDeadlines(int $studentId): array
     {
         $stmt = $this->pdo->prepare(
@@ -156,6 +161,7 @@ class ClassModel
         return $stmt->fetchAll();
     }
 
+    // Fetch announcements for faculty or student dashboard views.
     public function getAnnouncements(int $userId, string $userRole): array
     {
         $this->ensureAnnouncementAttachmentsTable();
@@ -186,6 +192,7 @@ class ClassModel
         return $announcements;
     }
 
+    // Attach file metadata to announcement records after fetching them.
     private function attachFilesToAnnouncements(array &$announcements): void
     {
         if ($announcements === []) {
@@ -213,6 +220,7 @@ class ClassModel
         }
     }
 
+    // Return calendar-friendly deadline entries for a specific student and month.
     public function getCalendarDeadlines(int $studentId, int $year, int $month): array
     {
         $stmt = $this->pdo->prepare(
@@ -243,6 +251,7 @@ class ClassModel
         return $deadlines;
     }
 
+    // Load class activities available to a faculty member or student.
     public function getActivities(int $userId, string $userRole): array
     {
         $this->ensureClassworkTables();
@@ -280,6 +289,7 @@ class ClassModel
         return $activities;
     }
 
+    // Attach uploaded files to each activity record.
     private function attachFilesToActivities(array &$activities): void
     {
         if ($activities === []) {
@@ -307,6 +317,7 @@ class ClassModel
         }
     }
 
+    // Add submission details for the current student to each activity.
     private function attachStudentSubmissionsToActivities(array &$activities, int $studentId): void
     {
         if ($activities === []) {
@@ -367,6 +378,7 @@ class ClassModel
         }
     }
 
+    // Attach student submission records and counts for faculty review.
     private function attachFacultySubmissionsToActivities(array &$activities): void
     {
         if ($activities === []) {
@@ -455,6 +467,7 @@ class ClassModel
         }
     }
 
+    // Create a new class record for a faculty member.
     public function create(int $facultyId, string $courseCode, string $title, string $section, string $classCode): int
     {
         $stmt = $this->pdo->prepare(
@@ -485,6 +498,7 @@ class ClassModel
         return (bool) $stmt->fetch();
     }
 
+    // Create a class announcement and return its new ID.
     public function createAnnouncement(int $facultyId, int $classId, string $title, string $message, string $tag = 'notice'): int
     {
         $this->ensureAnnouncementAttachmentsTable();
@@ -504,6 +518,7 @@ class ClassModel
         return (int) $this->pdo->lastInsertId();
     }
 
+    // Add a file attachment record for an announcement.
     public function addAnnouncementAttachment(
         int $announcementId,
         string $filename,
@@ -530,6 +545,7 @@ class ClassModel
         return (int) $this->pdo->lastInsertId();
     }
 
+    // Create a new activity within a class.
     public function createActivity(
         int $facultyId,
         int $classId,
@@ -556,6 +572,7 @@ class ClassModel
         return (int) $this->pdo->lastInsertId();
     }
 
+    // Add an attachment file to a class activity.
     public function addActivityAttachment(
         int $activityId,
         string $filename,
@@ -582,6 +599,7 @@ class ClassModel
         return (int) $this->pdo->lastInsertId();
     }
 
+    // Check whether a student is enrolled in the activity's class before allowing submission.
     public function studentCanSubmitActivity(int $studentId, int $activityId): bool
     {
         $this->ensureClassworkTables();
@@ -601,6 +619,7 @@ class ClassModel
         return (bool) $stmt->fetch();
     }
 
+    // Verify that the student is enrolled and can submit to this activity.
     public function createActivitySubmission(int $activityId, int $studentId): int
     {
         $this->ensureClassworkTables();
@@ -626,6 +645,7 @@ class ClassModel
         return (int) $findStmt->fetchColumn();
     }
 
+    // Attach a file to a student activity submission.
     public function addSubmissionAttachment(
         int $submissionId,
         string $filename,
@@ -652,6 +672,7 @@ class ClassModel
         return (int) $this->pdo->lastInsertId();
     }
 
+    // Verify that the faculty member owns the activity tied to the submission.
     public function facultyCanGradeSubmission(int $facultyId, int $submissionId): bool
     {
         $this->ensureClassworkTables();
@@ -672,6 +693,7 @@ class ClassModel
         return (bool) $stmt->fetch();
     }
 
+    // Record grading values on an activity submission.
     public function saveSubmissionGrade(int $submissionId, float $score, float $maxScore): bool
     {
         $this->ensureClassworkTables();
@@ -688,6 +710,7 @@ class ClassModel
         ]);
     }
 
+    // Clear grade values for a submission without deleting the submission itself.
     public function deleteSubmissionGrade(int $submissionId): bool
     {
         $this->ensureClassworkTables();
@@ -700,6 +723,7 @@ class ClassModel
         return $stmt->execute(['submission_id' => $submissionId]);
     }
 
+    // Delete an activity only if the faculty owns the associated class.
     public function deleteActivity(int $activityId, int $facultyId): bool
     {
         $this->ensureClassworkTables();
@@ -715,6 +739,7 @@ class ClassModel
         ]);
     }
 
+    // Lookup a class by its generated class code.
     public function getClassByCode(string $classCode): ?array
     {
         $stmt = $this->pdo->prepare(
@@ -729,6 +754,7 @@ class ClassModel
         return $stmt->fetch() ?: null;
     }
 
+    // Enroll a student in a class and return the enrollment record ID.
     public function enrollStudent(int $userId, int $classId): int
     {
         $stmt = $this->pdo->prepare(
@@ -744,6 +770,7 @@ class ClassModel
         return (int) $this->pdo->lastInsertId();
     }
 
+    // Get instructors for a student's enrolled classes.
     public function getStudentInstructors(int $studentId): array
     {
         $stmt = $this->pdo->prepare(
@@ -758,6 +785,7 @@ class ClassModel
         return $stmt->fetchAll();
     }
 
+    // Get students for the faculty member's active classes.
     public function getFacultyStudents(int $facultyId): array
     {
         $stmt = $this->pdo->prepare(
@@ -772,6 +800,7 @@ class ClassModel
         return $stmt->fetchAll();
     }
 
+    // Find classmates for a student across shared active enrollments.
     public function getStudentClassmates(int $studentId): array
     {
         $stmt = $this->pdo->prepare("
@@ -792,6 +821,7 @@ class ClassModel
         return $stmt->fetchAll();
     }
 
+    // Remove a student enrollment from a specific class.
     public function removeStudentFromClass(int $studentId, int $classId): bool
     {
         $stmt = $this->pdo->prepare(
@@ -803,6 +833,7 @@ class ClassModel
         ]);
     }
 
+    // Delete an announcement if it belongs to the requesting faculty member.
     public function deleteAnnouncement(int $announcementId, int $facultyId): bool
     {
         $stmt = $this->pdo->prepare(

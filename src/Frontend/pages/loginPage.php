@@ -1,7 +1,8 @@
 <?php
+// Start or resume the PHP session for authentication state.
 session_start();
 
-// Check if user is already logged in, redirect to dashboard
+// Check if user is already logged in and redirect them to the dashboard.
 if (isset($_SESSION['user']) && is_array($_SESSION['user'])) {
     header('Location: ../index.php');
     exit;
@@ -9,19 +10,22 @@ if (isset($_SESSION['user']) && is_array($_SESSION['user'])) {
 
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
+// Import application helpers, models, and controllers.
 use App\Controllers\UserController;
 use App\Helpers\Database;
 use App\Models\UserModel;
 use App\Helpers\Sanitizer;
 use App\Helpers\Validator;
 
+// Initialize shared objects for database access and user operations.
 $database = Database::getInstance();
 $userModel = new UserModel($database->getConnection());
 $userController = new UserController($userModel);
 
+// Default response payload for form submissions and AJAX calls.
 $response = ['success' => false, 'message' => ''];
 
-// Handle login request
+// Handle login request submitted from the login form.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
     $email = Sanitizer::sanitizeEmail($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -65,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Handle logout request
+// Handle logout request submitted from the logout form.
 elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'logout') {
     $_SESSION = [];
 
@@ -87,7 +91,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_PO
     $response = ['success' => true, 'message' => 'Logged out successfully'];
 }
 
-// Handle registration request
+// Handle registration request submitted from the registration form.
 elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'register') {
     $name = Sanitizer::plainText(trim($_POST['name'] ?? ''), 120);
     $email = Sanitizer::sanitizeEmail($_POST['email'] ?? '');
@@ -155,14 +159,14 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_PO
     }
 }
 
-// Return JSON response for AJAX requests
+// Return JSON response for AJAX requests to avoid full page reload.
 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
     header('Content-Type: application/json');
     echo json_encode($response);
     exit;
 }
 
-// If not AJAX and there's a successful login/registration, redirect
+// If the request was not AJAX and authentication succeeded, redirect browser to dashboard.
 if ($response['success'] && isset($response['redirect'])) {
     header('Location: ' . $response['redirect']);
     exit;
@@ -180,10 +184,10 @@ if ($response['success'] && isset($response['redirect'])) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <script>
-        // Store PHP response for JavaScript use
+        // Store PHP response for JavaScript use on page load.
         const serverResponse = <?php echo json_encode($response); ?>;
 
-        // Handle form submissions with AJAX
+        // Attach form handlers and UI logic when the DOM is ready.
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');

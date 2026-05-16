@@ -1361,6 +1361,7 @@ function bindAuthForms() {
 
 bindAuthForms();
 
+// Initialize the application session by checking whether a user is already logged in.
 async function startAppSession() {
     try {
         const result = await apiRequest("session");
@@ -1413,6 +1414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Bind click handlers to role buttons so the UI updates for faculty or student views.
 roleButtons.forEach((button) => {
     button.addEventListener("click", () => {
         try {
@@ -1431,6 +1433,7 @@ roleButtons.forEach((button) => {
     });
 });
 
+// Bind navigation buttons to switch panels in the dashboard.
 navButtons.forEach((button) => {
     button.addEventListener("click", () => {
         if (button.classList.contains("hidden")) {
@@ -1537,6 +1540,7 @@ async function removeStudentFromList(studentId, classId, studentElement) {
     }
 }
 
+// Remove a student from a class through the API and refresh relevant UI panels.
 async function removeStudentFromClass(studentId, classId, studentElement) {
     try {
         console.log('Removing student from class - Student:', studentId, 'Class:', classId);
@@ -1632,6 +1636,7 @@ document.addEventListener('click', function (e) {
     }
 });
 
+// Locate a submission object by its ID within the loaded activity data.
 function findSubmissionById(submissionId) {
     for (const activity of appData?.activities || []) {
         const submission = (activity.submissions || []).find((item) => String(item.submission_id) === String(submissionId));
@@ -1642,6 +1647,7 @@ function findSubmissionById(submissionId) {
     return null;
 }
 
+// Re-render grade-related views after a grade change or activity update.
 function refreshGradeViews() {
     renderClassManager(selectedClassId);
     if (document.getElementById('studentList')?.classList.contains('active') && selectedClassId) {
@@ -1649,6 +1655,7 @@ function refreshGradeViews() {
     }
 }
 
+// Persist grade data for a submission and refresh the UI on success.
 async function saveSubmissionGrade(submissionId, editor = document) {
     const gradeEditor = editor || document;
     const scoreInput = gradeEditor.querySelector(`[data-grade-score-for="${CSS.escape(String(submissionId))}"]`);
@@ -1687,6 +1694,7 @@ async function saveSubmissionGrade(submissionId, editor = document) {
     }
 }
 
+// Delete a grade for a submission and refresh the affected class views.
 async function deleteSubmissionGrade(submissionId) {
     try {
         const result = await apiRequest("deleteSubmissionGrade", {
@@ -1717,6 +1725,7 @@ async function deleteSubmissionGrade(submissionId) {
     }
 }
 
+// Delete an activity by ID and update the class manager data.
 async function deleteActivity(activityId) {
     if (!activityId) {
         return;
@@ -1751,6 +1760,7 @@ async function deleteActivity(activityId) {
     }
 }
 
+// Handle creating a new announcement post with optional attachments.
 if (classStreamPostBtn && classStreamInput) {
     classStreamPostBtn.addEventListener("click", async () => {
         const message = classStreamInput.value.trim();
@@ -1789,6 +1799,7 @@ if (classStreamPostBtn && classStreamInput) {
     });
 }
 
+// Show the activity creation form when the faculty button is clicked.
 if (createActivityBtn && activityForm) {
     createActivityBtn.addEventListener("click", () => {
         if (!selectedClassId) {
@@ -1801,6 +1812,7 @@ if (createActivityBtn && activityForm) {
     });
 }
 
+// Hide the activity form and clear attachments when cancellation is requested.
 if (cancelActivityBtn && activityForm) {
     cancelActivityBtn.addEventListener("click", () => {
         activityForm.reset();
@@ -1809,6 +1821,7 @@ if (cancelActivityBtn && activityForm) {
     });
 }
 
+// Submit the activity creation form and send data to the server.
 if (activityForm) {
     activityForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -1865,18 +1878,21 @@ if (activityForm) {
     });
 }
 
+// Open the create class modal overlay.
 if (openModalBtn) {
     openModalBtn.addEventListener("click", () => {
         modalBackdrop.classList.remove("hidden");
     });
 }
 
+// Close the create class modal overlay.
 if (closeModalBtn) {
     closeModalBtn.addEventListener("click", () => {
         modalBackdrop.classList.add("hidden");
     });
 }
 
+// Close modal overlay when clicking outside the modal content.
 if (modalBackdrop) {
     modalBackdrop.addEventListener("click", (event) => {
         if (event.target === modalBackdrop) {
@@ -1885,6 +1901,7 @@ if (modalBackdrop) {
     });
 }
 
+// Request a generated class code from the server and display it.
 if (generateCodeBtn) {
     generateCodeBtn.addEventListener("click", async () => {
         console.log("Generate code button clicked");
@@ -1910,6 +1927,7 @@ if (generateCodeBtn) {
     console.error("generateCodeBtn element not found");
 }
 
+// Submit profile updates and refresh the displayed user information.
 if (profileForm) {
     profileForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -1955,6 +1973,7 @@ if (profileForm) {
     });
 }
 
+// Handle password change requests through the password form.
 if (passwordForm) {
     passwordForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -1994,6 +2013,7 @@ if (passwordForm) {
     });
 }
 
+// Submit a new class creation form and refresh the app data afterwards.
 if (classForm) {
     classForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -2049,7 +2069,7 @@ if (classForm) {
     });
 }
 
-
+// Join a class using the provided class code.
 if (joinClassBtn) {
     joinClassBtn.addEventListener("click", async () => {
         try {
@@ -2088,7 +2108,6 @@ if (joinClassBtn) {
     });
 }
 
-
 /*
 
 HYS MAY LOGOUTBTN NA MAY ONLICK LOGOUT PA SA INDEX HALION MO NA INI
@@ -2118,6 +2137,7 @@ HYS MAY LOGOUTBTN NA MAY ONLICK LOGOUT PA SA INDEX HALION MO NA INI
 //     });
 // }
 
+// Add a random rotating announcement manually to the dashboard.
 if (manualAnnouncementBtn) {
     manualAnnouncementBtn.addEventListener("click", () => {
         const item = rotatingAnnouncements[Math.floor(Math.random() * rotatingAnnouncements.length)];

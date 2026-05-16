@@ -1,17 +1,25 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types=1); // Enforce strict typing for scalar values.
 
-namespace App\Controllers;
+namespace App\Controllers; // Define the controller namespace.
 
-use App\Helpers\Sanitizer;
-use App\Helpers\Validator;
-use App\Models\UserModel;
+use App\Helpers\Sanitizer; // Import sanitization helpers.
+use App\Helpers\Validator; // Import validation helpers.
+use App\Models\UserModel; // Import the user model for user operations.
 
 class UserController
 {
-    public function __construct(private UserModel $users) {}
     /**
+     * Inject the user model dependency.
+     *
+     * @param UserModel $users User data access object.
+     */
+    public function __construct(private UserModel $users) {}
+
+    /**
+     * Return the current authenticated user session.
+     *
      * @return array{success: bool, user?: array<string, mixed>|null, message?: string}
      */
     public function session(): array
@@ -23,6 +31,8 @@ class UserController
     }
 
     /**
+     * Authenticate a user and establish a session.
+     *
      * @return array{success: bool, user?: array<string, mixed>, message?: string}
      */
     public function login(): array
@@ -71,7 +81,7 @@ class UserController
             ];
         }
 
-        session_regenerate_id(true);
+        session_regenerate_id(true); // Protect against session fixation.
 
         $sessionUser = [
             'id' => (int) $foundUser['id'],
@@ -96,6 +106,8 @@ class UserController
     }
 
     /**
+     * Register a new user account and start a session.
+     *
      * @return array{success: bool, user?: array<string, mixed>, message?: string}
      */
     public function register(): array
@@ -189,7 +201,7 @@ class UserController
             throw $exception;
         }
 
-        session_regenerate_id(true);
+        session_regenerate_id(true); // Create a fresh session after registration.
 
         $sessionUser = [
             'id' => $id,
@@ -207,6 +219,7 @@ class UserController
                 substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255)
             );
         } catch (\PDOException) {
+            // Continue even if login audit cannot be recorded.
         }
 
         return [
@@ -216,6 +229,8 @@ class UserController
     }
 
     /**
+     * Log the current user out and destroy the session.
+     *
      * @return array{success: bool, message?: string}
      */
     public function logout(): array
@@ -227,7 +242,7 @@ class UserController
             ];
         }
 
-        $_SESSION = [];
+        $_SESSION = []; // Clear session data.
 
         if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();
@@ -242,12 +257,14 @@ class UserController
             );
         }
 
-        session_destroy();
+        session_destroy(); // Destroy the session on the server.
 
         return ['success' => true];
     }
 
     /**
+     * Get the current user from the session if available.
+     *
      * @return array<string, mixed>|null
      */
     private function currentUserFromSession(): ?array

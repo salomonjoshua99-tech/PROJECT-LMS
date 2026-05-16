@@ -7,9 +7,10 @@ namespace App\Helpers;
 
 class Validator
 {
+    // Collect validation error messages for the current request.
     private static $errors = [];
 
-    // Email Validator
+    // Validate email format, length, and basic structure.
     public static function validateEmail(string $email): bool
     {
         if (empty($email)) {
@@ -22,6 +23,7 @@ class Validator
             return false;
         }
 
+        // Additional regex validation for allowed email characters and domain structure.
         if (!preg_match("/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-z]{2,}$/", $email)) {
             self::$errors[] = "Invalid email format";
             return false;
@@ -35,7 +37,7 @@ class Validator
         return true;
     }
 
-    // Username Validator
+    // Validate username rules and reject patterns that look like SQL injection.
     public static function validateUsername($username)
     {
         if (empty($username)) {
@@ -58,7 +60,7 @@ class Validator
             return false;
         }
 
-        // Check for SQL injection patterns
+        // Reject usernames that include SQL keywords or common injection syntax.
         $sqlPatterns = ['/\bSELECT\b/i', '/\bINSERT\b/i', '/\bUPDATE\b/i', '/\bDELETE\b/i', '/\bDROP\b/i', '/--/', '/;\s*$/'];
         foreach ($sqlPatterns as $pattern) {
             if (preg_match($pattern, $username)) {
@@ -70,14 +72,7 @@ class Validator
         return true;
     }
 
-
-    /**
-     * @param array<string, mixed> $data
-     * @param list<string> $keys
-     * @return list<string> Missing or empty keys
-     */
-
-    // Password Validator
+    // Validate password strength and optional confirmation match.
     public static function validatePassword($password, $confirmPassword = null)
     {
         if (empty($password)) {
@@ -118,13 +113,14 @@ class Validator
         return true;
     }
 
+    // Return validation errors collected during the last checks.
     public static function getErrors()
     {
         return self::$errors;
     }
 
     /**
-     * Clear errors
+     * Clear stored validation errors.
      */
     public static function clearErrors()
     {
@@ -132,13 +128,16 @@ class Validator
     }
 
     /**
-     * Check if there are any errors
+     * Check if any validation errors were recorded.
      */
     public static function hasErrors()
     {
         return !empty(self::$errors);
     }
 
+    /**
+     * Validate that required keys are present and not empty in input data.
+     */
     public static function required(array $data, array $keys): array
     {
         $missing = [];
@@ -151,6 +150,9 @@ class Validator
         return $missing;
     }
 
+    /**
+     * Check whether a given value exists in an allowed list.
+     */
     public static function inList(string $value, array $allowed): bool
     {
         return in_array($value, $allowed, true);

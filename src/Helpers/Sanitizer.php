@@ -7,7 +7,7 @@ namespace App\Helpers;
 class Sanitizer
 {
 
-    // String
+    // Sanitize a generic string for safe output.
     public static function sanitizeString(string $value): string
     {
         if ($value === null) return '';
@@ -20,28 +20,27 @@ class Sanitizer
     }
 
     /**
-     * Sanitize username - allow only letters, numbers, underscores, dots
+     * Sanitize username input by allowing only alphanumeric characters,
+     * underscores and dots.
      */
     public static function sanitizeUsername($username)
     {
         if ($username === null) return '';
 
-        // Trim whitespace
+        // Trim whitespace and remove any embedded HTML.
         $sanitized = trim($username);
-
-        // Remove HTML tags
         $sanitized = strip_tags($sanitized);
 
-        // Convert special characters to HTML entities
+        // Escape HTML special characters before filtering.
         $sanitized = htmlspecialchars($sanitized, ENT_QUOTES, 'UTF-8');
 
-        // Allow only letters, numbers, underscores, and dots
+        // Keep only allowed username characters.
         $sanitized = preg_replace('/[^a-zA-Z0-9_.]/', '', $sanitized);
 
         return $sanitized;
     }
 
-    // Email
+    // Sanitize an email address and validate its structure.
     public static function sanitizeEmail(string $email): string
     {
         if ($email === null) return '';
@@ -52,21 +51,20 @@ class Sanitizer
         $sanitized = filter_var($sanitized, FILTER_SANITIZE_EMAIL);
 
         if (!filter_var($sanitized, FILTER_VALIDATE_EMAIL)) {
-            return ''; // or throw an error / return false
+            return ''; // Invalid emails are normalized to an empty string.
         }
         return $sanitized;
     }
 
-    // Password
+    // Sanitize a password input by trimming whitespace only.
     public static function sanitizePassword($password)
     {
         if ($password === null) return '';
 
-        // Just trim whitespace, don't modify password content
         return trim($password);
     }
 
-    // Return
+    // Return plain text with HTML removed and optional length truncation.
     public static function plainText(string $value, int $maxLength = 65535): string
     {
         $value = strip_tags($value);
@@ -77,7 +75,7 @@ class Sanitizer
         return $value;
     }
 
-    // Array
+    // Sanitize an associative array based on provided field type hints.
     public static function sanitizeArray($data, $fieldTypes = [])
     {
         $sanitized = [];

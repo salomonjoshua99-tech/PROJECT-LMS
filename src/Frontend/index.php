@@ -7,6 +7,7 @@ if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
     exit;
 }
 
+// Load Composer and application dependencies.
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 
@@ -35,6 +36,7 @@ $user = $_SESSION['user'];
 <body>
 
     <div class="app-shell">
+        <!-- Sidebar navigation, role controls, and user profile -->
         <aside class="sidebar">
             <div class="brand-block">
                 <p class="eyebrow">Campus Workspace</p>
@@ -68,6 +70,7 @@ $user = $_SESSION['user'];
             </div>
         </aside>
 
+        <!-- Main dashboard content area containing all interactive panels -->
         <main class="main-content">
             <section class="hero-card" id="heroCard">
                 <div class="hero-text">
@@ -92,6 +95,7 @@ $user = $_SESSION['user'];
                 </div>
             </section>
 
+            <!-- Banner displayed only for student users showing upcoming deadlines -->
             <section class="banner student-only hidden">
                 <div>
                     <p class="eyebrow">Pending Activities</p>
@@ -102,6 +106,7 @@ $user = $_SESSION['user'];
                 </ul>
             </section>
 
+            <!-- Overview section listing classes and summaries -->
             <section class="panel active" id="overview">
                 <div class="section-heading">
                     <div>
@@ -116,6 +121,7 @@ $user = $_SESSION['user'];
                 </div>
             </section>
 
+            <!-- Class management panel for managing a selected class and its stream -->
             <section class="panel" id="classManager">
                 <div class="classroom-header">
                     <button class="ghost-btn compact-btn" id="backToClassesBtn" type="button">Back</button>
@@ -206,6 +212,7 @@ $user = $_SESSION['user'];
                 </div>
             </section>
 
+            <!-- Faculty-only student roster and filters -->
             <section class="panel" id="students">
                 <div class="section-heading">
                     <div>
@@ -241,6 +248,7 @@ $user = $_SESSION['user'];
                 </div>
             </section>
 
+            <!-- Student-facing announcement feed panel -->
             <section class="panel" id="announcements">
                 <div class="section-heading">
                     <div>
@@ -269,6 +277,7 @@ $user = $_SESSION['user'];
                 </div>
             </section>
 
+            <!-- Student classwork overview and module cards -->
             <section class="panel" id="classwork">
                 <div class="section-heading">
                     <div>
@@ -305,6 +314,7 @@ $user = $_SESSION['user'];
                 </div>
             </section>
 
+            <!-- Detailed class student list view for a selected class -->
             <section class="panel" id="studentList">
                 <div class="section-heading">
                     <div>
@@ -338,6 +348,7 @@ $user = $_SESSION['user'];
                 </div>
             </section>
 
+            <!-- Account settings panel where users can update profile or password -->
             <section class="panel" id="settings">
                 <div class="section-heading">
                     <div>
@@ -399,6 +410,7 @@ $user = $_SESSION['user'];
         </main>
     </div>
 
+    <!-- Modal backdrop and dialog for creating a new class -->
     <div class="modal-backdrop hidden" id="modalBackdrop">
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
             <div class="modal-header">
@@ -437,7 +449,7 @@ $user = $_SESSION['user'];
     </div>
 
     <script>
-        // Logout function
+        // Handle logout API request and redirect back to the login page.
         function logout() {
             if (confirm('Are you sure you want to log out?')) {
                 fetch('api.php?action=logout', {
@@ -467,7 +479,7 @@ $user = $_SESSION['user'];
             }
         }
 
-        // Set initial role based on user session
+        // Initialize page UI and role-specific views after DOM is ready.
         document.addEventListener('DOMContentLoaded', function() {
             const body = document.body;
             body.setAttribute('data-role', '<?php echo htmlspecialchars($user['role']); ?>');

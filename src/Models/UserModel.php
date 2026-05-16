@@ -9,8 +9,10 @@ use PDO;
 class UserModel
 {
 
+    // PDO instance used for user-related database operations.
     public function __construct(private PDO $pdo) {}
 
+    // Find a single user record by email address.
     public function findByEmail(string $email): ?array
     {
 
@@ -23,6 +25,7 @@ class UserModel
         return $row === false ? null : $row;
     }
 
+    // Create a new user with hashed password and optional profile fields.
     public function create(string $name, string $email, string $passwordHash, string $role, ?string $birthdate = null, ?string $sex = null): int
     {
 
@@ -41,6 +44,7 @@ class UserModel
         return (int) $this->pdo->lastInsertId();
     }
 
+    // Record a successful login event for auditing and tracking.
     public function recordLogin(int $userId, ?string $ipAddress, string $userAgent): void
     {
 
@@ -55,6 +59,7 @@ class UserModel
         ]);
     }
 
+    // Update a user's profile name, email address, and sex field.
     public function updateProfile(int $userId, string $name, string $email, ?string $sex = null): bool
     {
         $stmt = $this->pdo->prepare(
@@ -68,6 +73,7 @@ class UserModel
         ]);
     }
 
+    // Change the stored password hash for the given user.
     public function changePassword(int $userId, string $newPasswordHash): bool
     {
         $stmt = $this->pdo->prepare(

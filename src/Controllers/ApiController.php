@@ -1,20 +1,38 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types=1); // Enable strict type checking for scalar types.
 
-namespace App\Controllers;
+namespace App\Controllers; // Define the controller namespace.
 
-use App\Models\ClassModel;
-use App\Models\UserModel;
+use App\Models\ClassModel; // Import the class model for class-related data operations.
+use App\Models\UserModel; // Import the user model for user-related data operations.
 
+/**
+ * API controller that handles class, announcement, activity, and submission endpoints.
+ */
 class ApiController
 {
+    /**
+     * Inject required model dependencies.
+     *
+     * @param ClassModel $classes Class-related database operations.
+     * @param UserModel $users User-related database operations.
+     */
     public function __construct(private ClassModel $classes, private UserModel $users) {}
 
+    /**
+     * Maximum attachment size in bytes (10 MB).
+     */
     private const MAX_ATTACHMENT_SIZE = 10485760;
 
+    /**
+     * Retrieve the current logged-in user data and related dashboard details.
+     *
+     * @return array<string, mixed>
+     */
     public function getUserData(): array
     {
+        // Check that a valid user session is available.
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
             return ['success' => false, 'message' => 'Unauthorized'];
         }
@@ -47,6 +65,13 @@ class ApiController
         }
     }
 
+    /**
+     * Determine classes for the user based on role.
+     *
+     * @param int $userId The ID of the user.
+     * @param string $role The role of the user.
+     * @return array<int, mixed>
+     */
     private function getUserClasses(int $userId, string $role): array
     {
         if ($role === 'faculty') {
@@ -56,6 +81,13 @@ class ApiController
         }
     }
 
+    /**
+     * Build calendar data for student deadlines.
+     *
+     * @param int $userId The ID of the student.
+     * @param string $role The role of the user.
+     * @return array<int, mixed>
+     */
     private function getCalendarData(int $userId, string $role): array
     {
         if ($role !== 'student') {
@@ -67,7 +99,7 @@ class ApiController
 
         $deadlines = $this->classes->getCalendarDeadlines($userId, $currentYear, $currentMonth);
 
-        // Build calendar array with all days of current month
+        // Build calendar array with all days of current month.
         $daysInMonth = (int) date('t');
         $calendar = [];
 
@@ -75,11 +107,11 @@ class ApiController
             $calendar[$day] = [
                 'day' => $day,
                 'has_deadline' => false,
-                'title' => null
+                'title' => null,
             ];
         }
 
-        // Mark days with deadlines
+        // Mark days with actual deadlines in the calendar.
         foreach ($deadlines as $deadline) {
             $calendar[$deadline['day']] = $deadline;
         }
@@ -87,6 +119,11 @@ class ApiController
         return array_values($calendar);
     }
 
+    /**
+     * Generate a random 6-character alphanumeric code.
+     *
+     * @return array<string, mixed>
+     */
     public function generateCode(): array
     {
         $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -98,6 +135,11 @@ class ApiController
         return ['success' => true, 'code' => $code];
     }
 
+    /**
+     * Create a new class when a faculty user submits the form.
+     *
+     * @return array<string, mixed>
+     */
     public function createClass(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
@@ -113,7 +155,7 @@ class ApiController
             return ['success' => false, 'message' => 'Invalid request method'];
         }
 
-        // Handle FormData instead of JSON
+        // Handle FormData instead of JSON.
         $courseCode = $_POST['courseCode'] ?? '';
         $title = $_POST['title'] ?? '';
         $section = $_POST['section'] ?? '';
@@ -132,7 +174,7 @@ class ApiController
         }
 
         try {
-            // Use provided class code or generate new one
+            // Use provided class code or generate a new one.
             $finalClassCode = $classCode ?: $this->generateClassCode();
 
             $classId = $this->classes->create(
@@ -152,14 +194,19 @@ class ApiController
                     'title' => trim($title),
                     'section' => trim($section),
                     'class_code' => $finalClassCode,
-                    'status' => 'active'
-                ]
+                    'status' => 'active',
+                ],
             ];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => 'Failed to create class: ' . $e->getMessage()];
         }
     }
 
+    /**
+     * Enroll a student in a class using a provided class code.
+     *
+     * @return array<string, mixed>
+     */
     public function joinClass(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
@@ -175,7 +222,7 @@ class ApiController
             return ['success' => false, 'message' => 'Invalid request method'];
         }
 
-        // Handle FormData instead of JSON
+        // Handle FormData instead of JSON.
         $classCode = $_POST['class_code'] ?? '';
 
         if (trim($classCode) === '') {
@@ -199,14 +246,19 @@ class ApiController
                     'class_id' => $classInfo['id'],
                     'class_code' => $classInfo['class_code'],
                     'title' => $classInfo['title'],
-                    'section' => $classInfo['section']
-                ]
+                    'section' => $classInfo['section'],
+                ],
             ];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => 'Failed to join class: ' . $e->getMessage()];
         }
     }
 
+    /**
+     * Create an announcement for a class and store optional attachments.
+     *
+     * @return array<string, mixed>
+     */
     public function createAnnouncement(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
@@ -261,6 +313,12 @@ class ApiController
         }
     }
 
+    /**
+     * Save announcement file attachments and return stored metadata.
+     *
+     * @param int $announcementId The announcement ID to associate with files.
+     * @return array<int, mixed>
+     */
     private function storeAnnouncementAttachments(int $announcementId): array
     {
         if (!isset($_FILES['attachments'])) {
@@ -326,6 +384,12 @@ class ApiController
         return $storedAttachments;
     }
 
+    /**
+     * Normalize PHP uploaded file arrays to a consistent file list.
+     *
+     * @param array<string, mixed> $files The raw $_FILES entry.
+     * @return array<int, array<string, mixed>>
+     */
     private function normalizeUploadedFiles(array $files): array
     {
         if (!is_array($files['name'] ?? null)) {
@@ -346,6 +410,11 @@ class ApiController
         return $normalized;
     }
 
+    /**
+     * Create a new activity for students with optional attachments.
+     *
+     * @return array<string, mixed>
+     */
     public function createActivity(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
@@ -412,6 +481,11 @@ class ApiController
         }
     }
 
+    /**
+     * Submit an activity with optional attachments for a student.
+     *
+     * @return array<string, mixed>
+     */
     public function submitActivity(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
@@ -469,6 +543,11 @@ class ApiController
         }
     }
 
+    /**
+     * Delete an activity created by a faculty user.
+     *
+     * @return array<string, mixed>
+     */
     public function deleteActivity(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
@@ -495,6 +574,11 @@ class ApiController
         }
     }
 
+    /**
+     * Save a grade for a student submission.
+     *
+     * @return array<string, mixed>
+     */
     public function saveSubmissionGrade(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
@@ -533,6 +617,11 @@ class ApiController
         }
     }
 
+    /**
+     * Delete a grade record from a student submission.
+     *
+     * @return array<string, mixed>
+     */
     public function deleteSubmissionGrade(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
@@ -561,6 +650,16 @@ class ApiController
         }
     }
 
+    /**
+     * Save uploaded files for activities, submissions, or announcements.
+     *
+     * @param string $fieldName The file input field name.
+     * @param string $uploadDirectory Local directory path for storage.
+     * @param string $publicDirectory Public-facing path prefix.
+     * @param callable $persistAttachment Callback to persist attachment metadata.
+     * @param int $parentId ID of the parent record.
+     * @return array<int, mixed>
+     */
     private function storeUploadedAttachments(
         string $fieldName,
         string $uploadDirectory,
@@ -623,6 +722,11 @@ class ApiController
         return $storedAttachments;
     }
 
+    /**
+     * Generate a random class code string.
+     *
+     * @return string Generated class code.
+     */
     private function generateClassCode(): string
     {
         $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -633,6 +737,11 @@ class ApiController
         return $code;
     }
 
+    /**
+     * Remove a student from a class.
+     *
+     * @return array<string, mixed>
+     */
     public function removeStudent(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
@@ -668,6 +777,11 @@ class ApiController
         }
     }
 
+    /**
+     * Delete an announcement from a class.
+     *
+     * @return array<string, mixed>
+     */
     public function deleteAnnouncement(): array
     {
         if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {

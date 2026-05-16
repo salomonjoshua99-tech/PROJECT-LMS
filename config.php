@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+// Load environment variables from a .env file into an associative array.
 function loadEnvFile(string $path): array
 {
     if (!is_file($path)) {
@@ -38,6 +39,7 @@ function loadEnvFile(string $path): array
     return $vars;
 }
 
+// Retrieve a single environment variable with optional fallback.
 function env(string $key, ?string $default = null): ?string
 {
     static $envVars = null;
@@ -49,6 +51,7 @@ function env(string $key, ?string $default = null): ?string
     return $envVars[$key] ?? $default;
 }
 
+// Return application configuration values, reading from .env when available.
 function appConfig(): array
 {
     return [
